@@ -1,0 +1,310 @@
+﻿
+<html>
+<head>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial;
+            padding: 20px;
+            background: #f1f1f1;
+        }
+
+        /* Header/Blog Title */
+        .header {
+            padding: 30px;
+            font-size: 40px;
+            text-align: center;
+            background: white;
+        }
+
+        /* Create two unequal columns that floats next to each other */
+        /* Left column */
+        .leftcolumn {
+            float: left;
+            width: 75%;
+        }
+
+        /* Right column */
+        .rightcolumn {
+            float: left;
+            width: 25%;
+            padding-left: 20px;
+        }
+
+        /* Fake image */
+        .fakeimg {
+            background-color: #aaa;
+            width: 100%;
+            padding: 20px;
+        }
+
+        /* Add a card effect for articles */
+        .card {
+            background-color: white;
+            padding: 20px;
+            margin-top: 20px;
+        }
+
+        /* Clear floats after the columns */
+        .row:after {
+            content: "";
+            display: table;
+            clear: both;
+        }
+
+        /* Footer */
+        .footer {
+            padding: 20px;
+            text-align: center;
+            background: #ddd;
+            margin-top: 20px;
+        }
+    </style>
+    <script src="https://s3.amazonaws.com/stitch-sdks/js/bundles/4.0.0/stitch.js"></script>
+
+    <script>
+        // Initialize the App Client
+        const client = stitch.Stitch.initializeDefaultAppClient("gambblog-hmwll");
+        // Get a MongoDB Service Client
+        const mongodb = client.getServiceClient(
+            stitch.RemoteMongoClient.factory,
+            "mongodb-atlas"
+        );
+        // Get a reference to the blog database
+        const db = mongodb.db("GambBlog");
+
+        function displayComments() {
+            db.collection("Comments")
+                .find({}, { limit: 1000 })
+                .asArray()
+                .then(docs => {
+                    const html = docs.map(doc => `<div>${doc.comment}</div>`);
+                    document.getElementById("Comments").innerHTML = html;
+                })
+        }
+
+        function displayCommentsOnLoad() {
+            client.auth
+                .loginWithCredential(new stitch.AnonymousCredential())
+                .then(displayComments)
+                .catch(console.error);
+        }
+
+        function addComment() {
+            const newComment = document.getElementById("new_comment");
+            console.log("add comment", client.auth.user.id)
+            db.collection("Comments")
+                .insertOne({ owner_id: client.auth.user.id, comment: newComment.value })
+                .then(displayComments);
+            newComment.value = "";
+        }
+
+        function deleteAllComments() {
+            console.log("deleting all comments");
+            db.collection("Comments").deleteMany({});
+            document.getElementById("Comments").innerHTML = "";
+        }
+    </script>
+
+
+</head>
+<body onLoad="displayCommentsOnLoad()">
+    <div class="header">
+        <h2>Nick Gamb's MongoDB Blog</h2>
+    </div>
+
+    <div class="row">
+        <div class="leftcolumn">
+            <div class="card">
+                <h2>MongoDB for All Backend Needs</h2>
+                <h5>MongoDB Stitch makes managing a backed a joy for all projects of any size, Apr 2, 2019</h5>
+                <div class="fakeimg" style="height:200px;">
+                    <img src="~/Images/MongoLogoLong.png" alt="MongoLogo" width="800" height="170">
+                </div>
+                <br />
+                <p>
+                    Let's face it, backends can be one of the most time consuming, and frustrating, aspects of modern web 
+                    application development. Spinning up all of the infrastructure, installing a database solution, 
+                    implementing security between mix-matched products... it can be a hassle to deploy, a hassle to 
+                    maintain, and (especially for aging backends) a hassle to scale up / build on top of.
+                </p>
+                <p>
+                    So, imagine my surprise when I discovered that I could spin up an entire backend solution on AWS with 
+                    the click of a few buttons and five minutes' worth of time. "Impossible" you say? Not with MongoDB 
+                    Stitch. I sat down with MongoDB to explore its value and took it for a spin as the backend for a simple 
+                    blog application.
+                </p>
+                <p>
+                    I can't say what impressed me more...the stupidly simple infrastructure deployment, or that integration 
+                    into my code took only a few lines. What I can say is that after my time with MongoDB Stitch, 
+                    I will not be going back to older solutions.
+                </p>
+                <p>
+                    My project desires were simple, create a basic blog that leveraged MongoDB Stitch as the backend for a 
+                    comments feature. The goal was to provide basic ability to create comments, delete comments, 
+                    and to complete the entire project in a couple of hours.
+                </p>
+                <p>
+                    The first step was to get the infrastructure deployed. Normally this would take an hour or more itself, even for a simple project like this. I quickly made it to the
+                    <a href="https://www.mongodb.com/download-center">MongoDB download center</a> where I was able to create a new account, and spin up a new Atlas cluster. This process took less than 5 minutes and was refreshingly intuitive.
+                </p>
+                <p><img src="~/Images/build-cluster-prompt.png" alt="MongoLogo" width="500" height="500"></p>
+                <p>
+                    The next step was to create a MongoDB Stitch app from within my Atlas account. This was one simple prompt asking for a name, cluster to connect to (which is the cluster that I had just created), and deployment region. Easy enough.
+                    <img src="~/Images/create-new-app-modal.png" alt="MongoLogo" width="400" height="500">
+                </p>
+                <p>
+                    With the infrastructure deployed, I was ready to code...and in record time at that! To expedite this exercise, I decided to deploy an ASP.net MVC app in Visual Studio 2017 CE, all default.
+                </p>
+                <p>
+                    <img src="~/Images/nsnewproj.png" alt="MongoLogo" width="700" height="600">
+                </p>
+                <p>
+                    <img src="~/Images/mvc.png" alt="MongoLogo" width="700" height="600">
+                </p>
+                <p>
+                    I made use of the template created by Visual Studio and opted to simply modify the index.cshtml. I wanted to get the comments section up and running quickly, as that was the main focus of this exercise.
+                    The first step was to reference the MongoDB Stitch SDK.
+                    <pre>&lt;script src="https://s3.amazonaws.com/stitch-sdks/js/bundles/4/stitch.js"&gt;&lt;/script&gt;</pre>
+                <p>
+                    With the SDK referenced, I was able to add the following JavaScript to communicate with MongoDB
+                    <pre><code>
+    // Initialize the App Client
+    const client = stitch.Stitch.initializeDefaultAppClient("gambblog-hmwll");
+    // Get a MongoDB Service Client
+    const mongodb = client.getServiceClient(
+    stitch.RemoteMongoClient.factory,
+    "mongodb-atlas"
+    );
+    // Get a reference to the blog database
+    const db = mongodb.db("GambBlog");
+
+    function displayComments() {
+    db.collection("Comments")
+    .find({}, { limit: 1000 })
+    .asArray()
+    .then(docs => {
+    const html = docs.map(doc => `<div>${doc.comment}</div>`);
+    document.getElementById("Comments").innerHTML = html;
+    })
+    }
+
+    function displayCommentsOnLoad() {
+    client.auth
+    .loginWithCredential(new stitch.AnonymousCredential())
+    .then(displayComments)
+    .catch(console.error);
+    }
+
+    function addComment() {
+    const newComment = document.getElementById("new_comment");
+    console.log("add comment", client.auth.user.id)
+    db.collection("Comments")
+    .insertOne({ owner_id: client.auth.user.id, comment: newComment.value })
+    .then(displayComments);
+    newComment.value = "";
+    }
+
+    function deleteAllComments() {
+    console.log("deleting all comments");
+    db.collection("Comments").deleteMany({});
+    document.getElementById("Comments").innerHTML = "";
+    }
+</code></pre>
+                </p>
+                <p>
+                    The above code is pretty simple. First, we initialize the app client to the MongoDB cluster that we created. The client name can be found in Stitch under Clients.
+                    Next, we get our database using "const db = mongodb.db("GambBlog");" It's amazing that one line is all that is needed to pull in the contents of the database. To get the actual comments themselves,
+                    a function called displayComments was needed to parse the database collection and populate the Comments element, which will be added to the html later. Finally, the addComment function
+                    writes to the database and deleteAllComments deletes from the database.
+                </p>
+                <p>
+                    So far, the code needed is very simple parsing logic. The final steps were to display the comments on page load and render elements to add and delete comments.
+                </p>
+                <pre>&lt;html&gt;
+  &lt;head&gt;
+  &lt;/head&gt;
+  &lt;body&gt;
+    &lt;h3&gt;This is a great blog post&lt;/h3&gt;
+    &lt;div id="content"&gt;
+      I like to write about technology because I want to get on the
+      front page of hacker news.
+    &lt;/div&gt;
+    &lt;hr&gt;
+    &lt;div id="comments"&gt;&lt;/div&gt;
+  &lt;/body&gt;
+&lt;/html&gt;</pre>
+                <p>
+                    Thats it! After loading the page, the comments display as expected. I am able to submit new comments, and delete all comments, using their respective buttons.
+                    It took less than an hour to go from zero knowledge of MongoDB Stitch to a fully working solution. I can't say that I have ever used an easier platform.
+                </p>
+                <p>
+                    A few closing notes. MongoDB Stitch easily integrates with Google/Facebook for auth and supports third party auth vendors via custom JWT tokens. MongoDB Stitch also
+                    has its own internal authorization system, which includes support for access roles for granular access permissions. For more details, or to try MongoDB Stitch out for yourself, visit <a href="https://docs.mongodb.com/stitch/">MongoDB</a>.
+                </p>
+                <p>The comments section below runs on MongoDB! Let me know what you think!</p>
+            </div>
+            <div class="card">
+                <h2>Issue Tracking via Social</h2>
+                <h5>Tracking problems reported in Social Networks, Apr 1, 2019</h5>
+                <div class="fakeimg" style="height:200px;">
+                    <img src="~/Images/EITA.png" alt="EITA" width="800" height="170">
+                </div>
+                <br />
+                <p>
+                    Recently I created an Example Issue Tracking Application which aggregates posts on Twitter and Stack Overflow, based on tags/hastags of interest, and presents them in a feed.
+                    From the feed, users are able to track posts of interest. The solution writes tracked issues to a json flat file as an example. Source code <a href="https://github.com/nickgamb/EITA">here</a>
+                </p>
+                <p>
+                    Using a solution like MongoDB Stitch to handle the tracked cases and to provide authorization to the data would have provided a much more intuitive solution with less effort.
+                    Just to support a json flat file it took the creation of an IO handler, a json parser, and a server side auth solution. MondoDB Stitch not only simplifies the integration effort,
+                    but it deploys the infrastructure in minutes, scales as needed, and provides easy authorization for users both locally and via providers such as Google and Facebook.
+                </p>
+                <p>
+                    In my next post I will be taking MongoDB Stitch for a spin by creating a simple blog application.
+                </p>
+            </div>
+        </div>
+        <div class="rightcolumn">
+            <div class="card">
+                <h2>About Me</h2>
+                <div class="fakeimg" style="height:200px; width:200px;">
+                    <img src="~/Images/headshot.jpg" alt="Nick'sHeadshot" width="160" height="160">
+                </div>
+                <hr>
+                <p>
+                    Passionate, reliable, and motivated developer with extensive programming and solution development knowledge,
+                    exceptional interpersonal / customer facing abilities, strong product management knowledge,
+                    proven program management history, and deep expertise in software security / IAM.
+                </p>
+            </div>
+            <div class="card">
+                <h3>Popular Post</h3>
+                <div class="fakeimg"><img src="~/Images/MongoLogoLong.png" alt="MongoLogo" width="200" height="35"></div><br>
+                <div class="fakeimg"><img src="~/Images/EITA.png" alt="EITA" width="200" height="35"></div><br>
+                <div class="fakeimg"><img src="~/Images/MongoLogoLong.png" alt="MongoLogo" width="200" height="35"></div>
+            </div>
+            <div class="card">
+                <h3>Follow Me</h3>
+                <p>
+                    <a href="https://www.linkedin.com/in/nickgamb/"><img src="~/Images/linkedin.png" title="LinkedIn" width="25" height="25" /></a>
+                    <a href="https://twitter.com/nickcgamb"><img src="~/Images/twitter.png" title="Twitter" width="25" height="25" /></a>
+                </p>
+            </div>
+        </div>
+    </div>
+    <h3>Comments</h3>
+    <hr>
+    <div id="Comments"></div>
+    <hr>
+    Add a Comment: <input id="new_comment"><input type="submit" value="Submit" onClick="addComment()">
+    <input id="delete_all_comments" type="button" value="Delete All Comments" onClick="deleteAllComments()">
+    <hr>
+    <div class="footer">
+        <h2></h2>
+    </div>
+</body>
+</html>
